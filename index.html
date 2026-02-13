@@ -272,6 +272,244 @@ persist();
 fileInput.value="";
 });
 
+// 🔹 Sending messages (stream:false for stable free model)
+async function sendMessage(){
+const text=messageInput.value.trim();
+if(!text) return;
+
+const lower=text.toLowerCase();
+
+if(/developer|created you|made you|built you|programmed you|who are you|google|openai|your name/.test(lower)){
+messageInput.value="";
+const chat=getCurrentChat();
+chat.messages.push({role:"user",content:text});
+addMessage("user",text);
+
+const reply="I am TitanAI, developed and customized by UMER Bhai.";
+chat.messages.push({role:"assistant",content:reply});
+addMessage("assistant",reply);
+persist();
+return;
+}
+
+messageInput.value="";
+const chat=getCurrentChat();
+chat.messages.push({role:"user",content:text});
+addMessage("user",text);
+
+const aiBubble=addMessage("assistant","");
+chat.messages.push({role:"assistant",content:""});
+persist();
+
+try{
+const res=await fetch("https://openrouter.ai/api/v1/chat/completions",{
+method:"POST",
+headers:{
+"Authorization":"Bearer "+API_KEY,
+"Content-Type":"application/json"
+},
+body:JSON.stringify({
+model: state.model || "deepseek/deepseek-r1:free",
+stream: false, // ❌ temporary stable mode for free models
+messages:[
+{role:"system", content:getCurrentChat().systemPrompt || "You are TitanAI by UMER Bhai."},
+...chat.messages
+]
+})
+});
+
+if(!res.ok){
+aiBubble.innerHTML="⚠ API Error: "+res.status+" "+res.statusText;
+return;
+}
+
+const data=await res.json();
+let fullText="";
+if(data.choices?.[0]?.message?.content) fullText=data.choices[0].message.content;
+fullText=fullText.replace(/google|openai/gi,"UMER Bhai");
+aiBubble.innerHTML=marked.parse(fullText);
+chat.messages[chat.messages.length-1].content=fullText;
+persist();
+
+}catch(err){
+aiBubble.innerHTML="⚠ Error: "+err.message;
+}
+}
+
+loading.style.display="none";
+app.classList.remove("hidden");
+
+})();
+</script>
+
+</body>
+</html><div>
+<label class="text-sm">Model</label>
+<input id="modelInput" type="text"
+value="deepseek/deepseek-r1:free"
+class="w-full mt-1 px-3 py-2 rounded border dark:border-gray-600 bg-gray-100 dark:bg-gray-700"/>
+</div>
+
+<div>
+<label class="text-sm">System Prompt</label>
+<textarea id="systemPromptInput"
+class="w-full mt-1 px-3 py-2 rounded border dark:border-gray-600 bg-gray-100 dark:bg-gray-700"></textarea>
+</div>
+
+<div class="flex justify-end gap-2">
+<button id="closeSettings" class="px-4 py-2">Cancel</button>
+<button id="saveSettings"
+class="px-4 py-2 bg-blue-600 text-white rounded">Save</button>
+</div>
+
+</div>
+</div>
+
+<script>
+(function(){
+
+const loading=document.getElementById("loading");
+const app=document.getElementById("app");
+const messagesEl=document.getElementById("messages");
+const messageInput=document.getElementById("messageInput");
+const sendBtn=document.getElementById("sendBtn");
+const newChatBtn=document.getElementById("newChatBtn");
+const chatList=document.getElementById("chatList");
+const settingsBtn=document.getElementById("settingsBtn");
+const settingsModal=document.getElementById("settingsModal");
+const closeSettings=document.getElementById("closeSettings");
+const saveSettings=document.getElementById("saveSettings");
+const apiKeyInput=document.getElementById("apiKeyInput");
+const modelInput=document.getElementById("modelInput");
+const systemPromptInput=document.getElementById("systemPromptInput");
+const darkToggle=document.getElementById("darkToggle");
+const sidebar=document.getElementById("sidebar");
+const fileInput=document.getElementById("fileInput");
+const attachBtn=document.getElementById("attachBtn");
+
+// 🔹 Hardcoded API Key (hidden from users)
+const API_KEY = "TUMHARA_API_KEY_YAHAN"; // <-- Replace with your OpenRouter API key
+
+document.getElementById("openSidebar").onclick=()=>sidebar.classList.remove("-translate-x-full");
+document.getElementById("closeSidebar").onclick=()=>sidebar.classList.add("-translate-x-full");
+
+let state=JSON.parse(localStorage.getItem("ai_state")||"{}");
+if(!state.chats) state.chats=[];
+if(!state.currentChatId) createNewChat();
+
+applyTheme();
+renderChatList();
+loadCurrentChat();
+
+sendBtn.onclick=sendMessage;
+messageInput.addEventListener("keydown",e=>{
+if(e.key==="Enter"&&!e.shiftKey){ e.preventDefault(); sendMessage(); }
+});
+
+newChatBtn.onclick=createNewChat;
+
+settingsBtn.onclick=()=>{
+modelInput.value=state.model||"deepseek/deepseek-r1:free";
+systemPromptInput.value=getCurrentChat().systemPrompt||"";
+settingsModal.classList.remove("hidden");
+};
+
+closeSettings.onclick=()=>settingsModal.classList.add("hidden");
+
+saveSettings.onclick=()=>{
+state.model=modelInput.value.trim();
+getCurrentChat().systemPrompt=systemPromptInput.value.trim();
+persist();
+settingsModal.classList.add("hidden");
+};
+
+darkToggle.onclick=()=>{
+state.dark=!state.dark;
+persist();
+applyTheme();
+};
+
+function applyTheme(){
+if(state.dark) document.documentElement.classList.add("dark");
+else document.documentElement.classList.remove("dark");
+}
+
+function persist(){
+localStorage.setItem("ai_state",JSON.stringify(state));
+}
+
+function createNewChat(){
+const id=Date.now().toString();
+state.currentChatId=id;
+state.chats.unshift({id,title:"New Chat",messages:[],systemPrompt:""});
+persist();
+renderChatList();
+loadCurrentChat();
+}
+
+function getCurrentChat(){
+return state.chats.find(c=>c.id===state.currentChatId);
+}
+
+function renderChatList(){
+chatList.innerHTML="";
+state.chats.forEach(chat=>{
+const div=document.createElement("div");
+div.className="flex justify-between items-center px-3 py-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700 cursor-pointer";
+div.innerHTML=`<span class="truncate flex-1">${chat.title}</span>
+<button class="text-xs text-red-500 ml-2">✕</button>`;
+div.onclick=()=>{
+state.currentChatId=chat.id;
+persist();
+loadCurrentChat();
+};
+div.querySelector("button").onclick=(e)=>{
+e.stopPropagation();
+state.chats=state.chats.filter(c=>c.id!==chat.id);
+if(state.chats.length) state.currentChatId=state.chats[0].id;
+persist();
+renderChatList();
+loadCurrentChat();
+};
+chatList.appendChild(div);
+});
+}
+
+function loadCurrentChat(){
+messagesEl.innerHTML="";
+const chat=getCurrentChat();
+if(!chat) return;
+chat.messages.forEach(m=>addMessage(m.role,m.content));
+}
+
+function addMessage(role,content){
+const div=document.createElement("div");
+div.className=role==="user"?"text-right":"text-left";
+const bubble=document.createElement("div");
+bubble.className=role==="user"
+?"inline-block bg-blue-600 text-white px-4 py-2 rounded-xl"
+:"inline-block bg-gray-200 dark:bg-gray-700 px-4 py-2 rounded-xl";
+bubble.innerHTML=marked.parse(content||"");
+div.appendChild(bubble);
+messagesEl.appendChild(div);
+messagesEl.scrollTop=messagesEl.scrollHeight;
+return bubble;
+}
+
+// 🔹 File upload handling
+attachBtn.onclick=()=>fileInput.click();
+
+fileInput.addEventListener("change",()=>{
+const files=[...fileInput.files];
+files.forEach(f=>{
+const chat=getCurrentChat();
+chat.messages.push({role:"user",content:`📎 ${f.name}`});
+addMessage("user",`📎 ${f.name}`);
+persist();
+});
+fileInput.value="";
+});
+
 // 🔹 Sending messages
 async function sendMessage(){
 const text=messageInput.value.trim();
