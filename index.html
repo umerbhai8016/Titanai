@@ -22,6 +22,8 @@ pre{
 
 .dark pre{ background:#000; }
 
+img.uploaded-img{ max-width:150px; border-radius:8px; }
+
 @keyframes blink{
   0%,100%{opacity:1}
   50%{opacity:0}
@@ -74,7 +76,12 @@ class="w-full bg-blue-600 text-white rounded-lg py-2 hover:bg-blue-700">
 <div id="messages" class="flex-1 overflow-y-auto p-4 space-y-4 pb-32"></div>
 
 <div class="fixed bottom-0 left-0 right-0 md:left-72 bg-white dark:bg-gray-800 border-t dark:border-gray-700 p-3">
-<div class="max-w-4xl mx-auto flex gap-2">
+<div class="max-w-4xl mx-auto flex gap-2 items-center">
+
+<!-- Attach file button -->
+<input type="file" id="fileInput" class="hidden" multiple />
+<button id="attachBtn" class="px-4 py-2 bg-gray-300 dark:bg-gray-700 rounded-lg hover:bg-gray-400">📎</button>
+
 <textarea id="messageInput" rows="1"
 placeholder="Send a message..."
 class="flex-1 resize-none rounded-xl border dark:border-gray-600 px-4 py-2 focus:outline-none focus:ring focus:ring-blue-500 bg-gray-100 dark:bg-gray-700"></textarea>
@@ -142,6 +149,8 @@ const modelInput=document.getElementById("modelInput");
 const systemPromptInput=document.getElementById("systemPromptInput");
 const darkToggle=document.getElementById("darkToggle");
 const sidebar=document.getElementById("sidebar");
+const fileInput=document.getElementById("fileInput");
+const attachBtn=document.getElementById("attachBtn");
 
 document.getElementById("openSidebar").onclick=()=>sidebar.classList.remove("-translate-x-full");
 document.getElementById("closeSidebar").onclick=()=>sidebar.classList.add("-translate-x-full");
@@ -156,10 +165,7 @@ loadCurrentChat();
 
 sendBtn.onclick=sendMessage;
 messageInput.addEventListener("keydown",e=>{
-if(e.key==="Enter"&&!e.shiftKey){
-e.preventDefault();
-sendMessage();
-}
+if(e.key==="Enter"&&!e.shiftKey){ e.preventDefault(); sendMessage(); }
 });
 
 newChatBtn.onclick=createNewChat;
@@ -254,13 +260,28 @@ messagesEl.scrollTop=messagesEl.scrollHeight;
 return bubble;
 }
 
+// 🔹 File upload handling
+attachBtn.onclick=()=>fileInput.click();
+
+fileInput.addEventListener("change",()=>{
+const files=[...fileInput.files];
+files.forEach(f=>{
+const chat=getCurrentChat();
+chat.messages.push({role:"user",content:`📎 ${f.name}`});
+addMessage("user",`📎 ${f.name}`);
+persist();
+});
+fileInput.value="";
+});
+
+// 🔹 Sending messages
 async function sendMessage(){
 const text=messageInput.value.trim();
 if(!text) return;
 
 const lower=text.toLowerCase();
 
-// 🔥 TitanAI Identity Lock
+// TitanAI Developer lock
 if(/developer|created you|made you|built you|programmed you|who are you|google|openai|your name/.test(lower)){
 messageInput.value="";
 const chat=getCurrentChat();
