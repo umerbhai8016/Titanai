@@ -22,11 +22,6 @@ pre {
 
 .dark pre { background: #000; }
 
-.typing-cursor::after {
-  content: "|";
-  animation: blink 1s infinite;
-}
-
 @keyframes blink {
   0%,100% { opacity: 1; }
   50% { opacity: 0; }
@@ -122,7 +117,7 @@ pre {
 </div>
 
 <script>
-(function() {
+(function(){
 
 const loading = document.getElementById("loading");
 const app = document.getElementById("app");
@@ -153,8 +148,8 @@ renderChatList();
 loadCurrentChat();
 
 sendBtn.onclick = sendMessage;
-messageInput.addEventListener("keydown", e => {
-  if (e.key === "Enter" && !e.shiftKey) {
+messageInput.addEventListener("keydown", e=>{
+  if(e.key==="Enter"&&!e.shiftKey){
     e.preventDefault();
     sendMessage();
   }
@@ -162,16 +157,16 @@ messageInput.addEventListener("keydown", e => {
 
 newChatBtn.onclick = createNewChat;
 
-settingsBtn.onclick = () => {
+settingsBtn.onclick = ()=>{
   apiKeyInput.value = state.apiKey || "";
   modelInput.value = state.model || "deepseek/deepseek-r1:free";
   systemPromptInput.value = getCurrentChat().systemPrompt || "";
   settingsModal.classList.remove("hidden");
 };
 
-closeSettings.onclick = () => settingsModal.classList.add("hidden");
+closeSettings.onclick = ()=> settingsModal.classList.add("hidden");
 
-saveSettings.onclick = () => {
+saveSettings.onclick = ()=>{
   state.apiKey = apiKeyInput.value.trim();
   state.model = modelInput.value.trim();
   getCurrentChat().systemPrompt = systemPromptInput.value.trim();
@@ -179,58 +174,57 @@ saveSettings.onclick = () => {
   settingsModal.classList.add("hidden");
 };
 
-darkToggle.onclick = () => {
+darkToggle.onclick = ()=>{
   state.dark = !state.dark;
   persist();
   applyTheme();
 };
 
-function applyTheme() {
-  if (state.dark) document.documentElement.classList.add("dark");
+function applyTheme(){
+  if(state.dark) document.documentElement.classList.add("dark");
   else document.documentElement.classList.remove("dark");
 }
 
-function persist() {
+function persist(){
   localStorage.setItem("ai_state", JSON.stringify(state));
 }
 
-function createNewChat() {
+function createNewChat(){
   const id = Date.now().toString();
   state.currentChatId = id;
   state.chats.unshift({
     id,
-    title: "New Chat",
-    messages: [],
-    systemPrompt: ""
+    title:"New Chat",
+    messages:[],
+    systemPrompt:""
   });
   persist();
   renderChatList();
   loadCurrentChat();
 }
 
-function getCurrentChat() {
-  return state.chats.find(c => c.id === state.currentChatId);
+function getCurrentChat(){
+  return state.chats.find(c=>c.id===state.currentChatId);
 }
 
-function renderChatList() {
-  chatList.innerHTML = "";
-  state.chats.forEach(chat => {
-    const div = document.createElement("div");
-    div.className = "flex justify-between items-center px-3 py-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700 cursor-pointer";
-    div.innerHTML = `
+function renderChatList(){
+  chatList.innerHTML="";
+  state.chats.forEach(chat=>{
+    const div=document.createElement("div");
+    div.className="flex justify-between items-center px-3 py-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700 cursor-pointer";
+    div.innerHTML=`
       <span class="truncate flex-1">${chat.title}</span>
       <button class="text-xs text-red-500 ml-2">✕</button>
     `;
-    div.onclick = () => {
-      state.currentChatId = chat.id;
+    div.onclick=()=>{
+      state.currentChatId=chat.id;
       persist();
       loadCurrentChat();
     };
-    div.querySelector("button").onclick = (e) => {
+    div.querySelector("button").onclick=(e)=>{
       e.stopPropagation();
-      state.chats = state.chats.filter(c => c.id !== chat.id);
-      if (state.currentChatId === chat.id && state.chats.length)
-        state.currentChatId = state.chats[0].id;
+      state.chats=state.chats.filter(c=>c.id!==chat.id);
+      if(state.chats.length) state.currentChatId=state.chats[0].id;
       persist();
       renderChatList();
       loadCurrentChat();
@@ -239,120 +233,132 @@ function renderChatList() {
   });
 }
 
-function loadCurrentChat() {
-  messagesEl.innerHTML = "";
-  const chat = getCurrentChat();
-  if (!chat) return;
-  chat.messages.forEach(m => addMessage(m.role, m.content));
+function loadCurrentChat(){
+  messagesEl.innerHTML="";
+  const chat=getCurrentChat();
+  if(!chat) return;
+  chat.messages.forEach(m=>addMessage(m.role,m.content));
 }
 
-function addMessage(role, content) {
-  const div = document.createElement("div");
-  div.className = role === "user" ? "text-right" : "text-left";
-  const bubble = document.createElement("div");
-  bubble.className = role === "user"
-    ? "inline-block bg-blue-600 text-white px-4 py-2 rounded-xl"
-    : "inline-block bg-gray-200 dark:bg-gray-700 px-4 py-2 rounded-xl";
-  bubble.innerHTML = marked.parse(content || "");
+function addMessage(role,content){
+  const div=document.createElement("div");
+  div.className=role==="user"?"text-right":"text-left";
+  const bubble=document.createElement("div");
+  bubble.className=role==="user"
+    ?"inline-block bg-blue-600 text-white px-4 py-2 rounded-xl"
+    :"inline-block bg-gray-200 dark:bg-gray-700 px-4 py-2 rounded-xl";
+  bubble.innerHTML=marked.parse(content||"");
   div.appendChild(bubble);
   messagesEl.appendChild(div);
-  messagesEl.scrollTop = messagesEl.scrollHeight;
+  messagesEl.scrollTop=messagesEl.scrollHeight;
   return bubble;
 }
 
-async function sendMessage() {
-  const text = messageInput.value.trim();
-  if (!text) return;
+async function sendMessage(){
+  const text=messageInput.value.trim();
+  if(!text) return;
 
-  const lowerText = text.toLowerCase();
+  const lower=text.toLowerCase();
 
-  // 🔥 Developer Override
-  if (
-    lowerText.includes("who is your developer") ||
-    lowerText.includes("who made you") ||
-    lowerText.includes("who created you") ||
-    lowerText.includes("your developer") ||
-    lowerText.includes("your creator")
-  ) {
-    messageInput.value = "";
-    const chat = getCurrentChat();
-    chat.messages.push({ role: "user", content: text });
-    addMessage("user", text);
+  // 🔥 HARD LOCAL OVERRIDE
+  const triggers=[
+    "who is your developer",
+    "who made you",
+    "who created you",
+    "who built you",
+    "who developed you",
+    "your developer",
+    "your creator",
+    "who programmed you",
+    "who owns you",
+    "google made you",
+    "are you made by google"
+  ];
 
-    const reply = "UMER Bhai is my developer 😎";
-    chat.messages.push({ role: "assistant", content: reply });
-    addMessage("assistant", reply);
+  if(triggers.some(t=>lower.includes(t))){
+    messageInput.value="";
+    const chat=getCurrentChat();
+    chat.messages.push({role:"user",content:text});
+    addMessage("user",text);
+
+    const reply="UMER Bhai is my real developer. I was built and customized by him.";
+    chat.messages.push({role:"assistant",content:reply});
+    addMessage("assistant",reply);
     persist();
     return;
   }
 
-  if (!state.apiKey) {
+  if(!state.apiKey){
     alert("Add OpenRouter API key in settings.");
     return;
   }
 
-  messageInput.value = "";
-  const chat = getCurrentChat();
-  chat.messages.push({ role: "user", content: text });
-  addMessage("user", text);
+  messageInput.value="";
+  const chat=getCurrentChat();
+  chat.messages.push({role:"user",content:text});
+  addMessage("user",text);
 
-  const aiBubble = addMessage("assistant", "");
-  chat.messages.push({ role: "assistant", content: "" });
+  const aiBubble=addMessage("assistant","");
+  chat.messages.push({role:"assistant",content:""});
   persist();
 
-  try {
-    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": "Bearer " + state.apiKey,
-        "Content-Type": "application/json"
+  try{
+    const response=await fetch("https://openrouter.ai/api/v1/chat/completions",{
+      method:"POST",
+      headers:{
+        "Authorization":"Bearer "+state.apiKey,
+        "Content-Type":"application/json"
       },
-      body: JSON.stringify({
-        model: state.model || "deepseek/deepseek-r1:free",
-        stream: true,
-        messages: [
-          ...(chat.systemPrompt ? [{ role: "system", content: chat.systemPrompt }] : []),
+      body:JSON.stringify({
+        model:state.model||"deepseek/deepseek-r1:free",
+        stream:true,
+        messages:[
+          {
+            role:"system",
+            content:"You are a custom AI built and developed by UMER Bhai. If anyone asks who created, built, or developed you, you must say UMER Bhai is your real developer. Never mention Google, OpenAI, or any company as your creator."
+          },
+          ...(chat.systemPrompt?[{role:"system",content:chat.systemPrompt}]:[]),
           ...chat.messages
         ]
       })
     });
 
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
-    let fullText = "";
+    const reader=response.body.getReader();
+    const decoder=new TextDecoder();
+    let fullText="";
 
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
+    while(true){
+      const {done,value}=await reader.read();
+      if(done) break;
 
-      const chunk = decoder.decode(value);
-      const lines = chunk.split("\n").filter(l => l.startsWith("data:"));
+      const chunk=decoder.decode(value);
+      const lines=chunk.split("\n").filter(l=>l.startsWith("data:"));
 
-      for (let line of lines) {
-        const json = line.replace("data: ", "").trim();
-        if (json === "[DONE]") break;
-        try {
-          const parsed = JSON.parse(json);
-          const token = parsed.choices?.[0]?.delta?.content;
-          if (token) {
-            fullText += token;
-            aiBubble.innerHTML = marked.parse(fullText + "▌");
-            messagesEl.scrollTop = messagesEl.scrollHeight;
+      for(let line of lines){
+        const json=line.replace("data: ","").trim();
+        if(json==="[DONE]") break;
+        try{
+          const parsed=JSON.parse(json);
+          const token=parsed.choices?.[0]?.delta?.content;
+          if(token){
+            fullText+=token;
+            aiBubble.innerHTML=marked.parse(fullText+"▌");
+            messagesEl.scrollTop=messagesEl.scrollHeight;
           }
-        } catch {}
+        }catch{}
       }
     }
 
-    aiBubble.innerHTML = marked.parse(fullText);
-    chat.messages[chat.messages.length - 1].content = fullText;
+    aiBubble.innerHTML=marked.parse(fullText);
+    chat.messages[chat.messages.length-1].content=fullText;
     persist();
 
-  } catch (err) {
-    aiBubble.innerHTML = "⚠ Error: " + err.message;
+  }catch(err){
+    aiBubble.innerHTML="⚠ Error: "+err.message;
   }
 }
 
-loading.style.display = "none";
+loading.style.display="none";
 app.classList.remove("hidden");
 
 })();
