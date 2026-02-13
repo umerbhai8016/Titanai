@@ -313,7 +313,7 @@ headers:{
 "Content-Type":"application/json"
 },
 body:JSON.stringify({
-model: state.model || "deepseek/deepseek-r1:free", // ✅ Model switching working
+model: state.model || "deepseek/deepseek-r1:free",
 stream: true,
 messages:[
 {
@@ -325,6 +325,12 @@ content:getCurrentChat().systemPrompt || "You are TitanAI, a custom AI developed
 })
 });
 
+// Robust streaming reader
+if(!response.ok){
+aiBubble.innerHTML="⚠ API Error: "+response.status+" "+response.statusText;
+return;
+}
+
 const reader=response.body.getReader();
 const decoder=new TextDecoder();
 let fullText="";
@@ -332,15 +338,14 @@ let fullText="";
 while(true){
 const {done,value}=await reader.read();
 if(done) break;
-
 const chunk=decoder.decode(value);
-const lines=chunk.split("\n").filter(l=>l.startsWith("data:"));
-
+const lines=chunk.split("\n").filter(l=>l.startsWith("data: "));
 for(let line of lines){
-const json=line.replace("data: ","").trim();
-if(json==="[DONE]") break;
+const data=line.replace("data: ","").trim();
+if(data==="[DONE]") break;
+if(!data) continue;
 try{
-const parsed=JSON.parse(json);
+const parsed=JSON.parse(data);
 const token=parsed.choices?.[0]?.delta?.content;
 if(token){
 fullText+=token;
