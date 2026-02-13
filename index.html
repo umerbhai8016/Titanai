@@ -262,109 +262,322 @@ return bubble;
 attachBtn.onclick=()=>fileInput.click();
 
 fileInput.addEventListener("change",()=>{
-const files=[...fileInput.files];
-files.forEach(f=>{
-const chat=getCurrentChat();
-chat.messages.push({role:"user",content:`📎 ${f.name}`});
-addMessage("user",`📎 ${f.name}`);
-persist();
-});
-fileInput.value="";
-});
+<!DOCTYPE html>
+<html lang="en" class="bg-gray-50">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TitanAI - Gemini Clone</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Marked.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body class="min-h-screen flex flex-col">
+  <!-- Loader -->
+  <div id="loading" class="fixed inset-0 flex items-center justify-center bg-gray-50 dark:bg-gray-900 z-50">
+    Loading App...
+  </div>
 
-// 🔹 Sending messages
-async function sendMessage(){
-const text=messageInput.value.trim();
-if(!text) return;
+  <!-- Main App Layout -->
+  <div id="app" class="flex flex-1 overflow-hidden hidden">
+    <!-- Sidebar -->
+    <aside id="sidebar" class="w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col transition-transform duration-300 transform -translate-x-64 md:translate-x-0">
+      <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+        <h2 class="font-bold text-lg text-gray-900 dark:text-gray-100">Chats</h2>
+        <button id="closeSidebar" class="md:hidden text-gray-500 dark:text-gray-400">✕</button>
+      </div>
+      <div class="flex-1 overflow-y-auto p-2 space-y-2" id="chatList"></div>
+      <button id="newChat" class="w-full p-2 bg-blue-500 text-white rounded m-2 hover:bg-blue-600">+ New Chat</button>
+    </aside>
 
-const lower=text.toLowerCase();
+    <!-- Chat Area -->
+    <main class="flex-1 flex flex-col bg-gray-50 dark:bg-gray-900">
+      <!-- Top Bar -->
+      <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+        <button id="openSidebar" class="md:hidden text-gray-500 dark:text-gray-400">☰</button>
+        <h1 id="chatTitle" class="font-bold text-gray-900 dark:text-gray-100">New Chat</h1>
+        <div class="flex space-x-2">
+          <button id="settingsBtn" class="text-gray-500 dark:text-gray-400">⚙️</button>
+          <button id="darkModeToggle" class="text-gray-500 dark:text-gray-400">🌙</button>
+        </div>
+      </div>
 
-// UMER BHAI = Developer logic
-if(/developer|created you|made you|built you|programmed you|who are you|google|openai|your name/.test(lower)){
-messageInput.value="";
-const chat=getCurrentChat();
-chat.messages.push({role:"user",content:text});
-addMessage("user",text);
+      <!-- Messages -->
+      <div id="messages" class="flex-1 overflow-y-auto p-4 space-y-4"></div>
 
-const reply="I am TitanAI, developed and customized by UMER Bhai.";
-chat.messages.push({role:"assistant",content:reply});
-addMessage("assistant",reply);
-persist();
-return;
-}
+      <!-- Input Bar -->
+      <div class="sticky bottom-0 p-2 bg-gray-100 dark:bg-gray-800 flex items-center space-x-2">
+        <textarea id="input" class="flex-1 p-2 rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 resize-none" rows="1" placeholder="Type your message..."></textarea>
+        <button id="sendBtn" class="bg-blue-500 text-white p-2 rounded hover:bg-blue-600">Send</button>
+      </div>
+    </main>
+  </div>
 
-messageInput.value="";
-const chat=getCurrentChat();
-chat.messages.push({role:"user",content:text});
-addMessage("user",text);
+  <!-- Settings Modal -->
+  <div id="settingsModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+    <div class="bg-white dark:bg-gray-800 p-6 rounded w-80">
+      <h2 class="text-lg font-bold mb-4 text-gray-900 dark:text-gray-100">Settings</h2>
+      <label class="block mb-2 text-gray-700 dark:text-gray-200">OpenRouter API Key</label>
+      <input type="password" id="apiKeyInput" class="w-full p-2 mb-4 border border-gray-300 dark:border-gray-700 rounded bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100">
+      <label class="block mb-2 text-gray-700 dark:text-gray-200">Model Name</label>
+      <input type="text" id="modelInput" class="w-full p-2 mb-4 border border-gray-300 dark:border-gray-700 rounded bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100">
+      <label class="block mb-2 text-gray-700 dark:text-gray-200">System Prompt</label>
+      <textarea id="systemPromptInput" class="w-full p-2 mb-4 border border-gray-300 dark:border-gray-700 rounded bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100" rows="3"></textarea>
+      <div class="flex justify-end space-x-2">
+        <button id="closeSettings" class="px-4 py-2 bg-gray-300 dark:bg-gray-700 rounded hover:bg-gray-400 dark:hover:bg-gray-600">Close</button>
+        <button id="saveSettings" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Save</button>
+      </div>
+    </div>
+  </div>
 
-const aiBubble=addMessage("assistant","");
-chat.messages.push({role:"assistant",content:""});
-persist();
+  <!-- Script: MUST be at the end of body -->
+  <script>
+    (function() {
+      // ======== App State ========
+      let state = {
+        apiKey: localStorage.getItem('titanai_apiKey') || '',
+        model: localStorage.getItem('titanai_model') || 'deepseek/deepseek-r1:free',
+        darkMode: localStorage.getItem('titanai_darkMode') === 'true',
+        chats: JSON.parse(localStorage.getItem('titanai_chats') || '[]'),
+        currentChat: 0,
+        systemPrompt: localStorage.getItem('titanai_systemPrompt') || ''
+      };
 
-try{
-const res=await fetch("https://openrouter.ai/api/v1/chat/completions",{
-method:"POST",
-headers:{
-"Authorization":"Bearer "+API_KEY,
-"Content-Type":"application/json"
-},
-body:JSON.stringify({
-model: state.model || "deepseek/deepseek-r1:free",
-stream: true, // real-time typing
-messages:[
-{role:"system", content:getCurrentChat().systemPrompt || "You are TitanAI by UMER Bhai."},
-...chat.messages
-]
-})
-});
+      // ======== Elements ========
+      const loading = document.getElementById('loading');
+      const app = document.getElementById('app');
+      const messagesEl = document.getElementById('messages');
+      const inputEl = document.getElementById('input');
+      const sendBtn = document.getElementById('sendBtn');
+      const chatListEl = document.getElementById('chatList');
+      const chatTitleEl = document.getElementById('chatTitle');
+      const newChatBtn = document.getElementById('newChat');
+      const settingsBtn = document.getElementById('settingsBtn');
+      const settingsModal = document.getElementById('settingsModal');
+      const closeSettingsBtn = document.getElementById('closeSettings');
+      const saveSettingsBtn = document.getElementById('saveSettings');
+      const apiKeyInput = document.getElementById('apiKeyInput');
+      const modelInput = document.getElementById('modelInput');
+      const systemPromptInput = document.getElementById('systemPromptInput');
+      const darkModeToggle = document.getElementById('darkModeToggle');
+      const sidebar = document.getElementById('sidebar');
+      const openSidebarBtn = document.getElementById('openSidebar');
+      const closeSidebarBtn = document.getElementById('closeSidebar');
 
-if(!res.ok){
-aiBubble.innerHTML="⚠ API Error: "+res.status+" "+res.statusText;
-return;
-}
+      // ======== Initialize ========
+      function init() {
+        // Hide loader
+        loading.style.display = 'none';
+        app.classList.remove('hidden');
 
-const reader=res.body.getReader();
-const decoder=new TextDecoder();
-let fullText="";
+        // Dark mode
+        updateDarkMode();
 
-while(true){
-const {done,value}=await reader.read();
-if(done) break;
-const chunk=decoder.decode(value);
-const lines=chunk.split("\n").filter(l=>l.startsWith("data: "));
-for(let line of lines){
-const data=line.replace("data: ","").trim();
-if(data==="[DONE]") break;
-if(!data) continue;
-try{
-const parsed=JSON.parse(data);
-const token=parsed.choices?.[0]?.delta?.content;
-if(token){
-fullText+=token;
-fullText=fullText.replace(/google|openai/gi,"UMER Bhai");
-aiBubble.innerHTML=marked.parse(fullText+"▌");
-messagesEl.scrollTop=messagesEl.scrollHeight;
-}
-}catch{}
-}
-}
+        // Populate settings
+        apiKeyInput.value = state.apiKey;
+        modelInput.value = state.model;
+        systemPromptInput.value = state.systemPrompt;
 
-fullText=fullText.replace(/google|openai/gi,"UMER Bhai");
-aiBubble.innerHTML=marked.parse(fullText);
-chat.messages[chat.messages.length-1].content=fullText;
-persist();
+        // Load chats
+        if(state.chats.length === 0) newChat();
+        else loadChat(state.currentChat);
 
-}catch(err){
-aiBubble.innerHTML="⚠ Error: "+err.message;
-}
-}
+        renderChatList();
+      }
 
-loading.style.display="none";
-app.classList.remove("hidden");
+      // ======== Dark Mode ========
+      function updateDarkMode() {
+        if(state.darkMode) document.documentElement.classList.add('dark');
+        else document.documentElement.classList.remove('dark');
+      }
 
-})();
-</script>
+      darkModeToggle.addEventListener('click', () => {
+        state.darkMode = !state.darkMode;
+        localStorage.setItem('titanai_darkMode', state.darkMode);
+        updateDarkMode();
+      });
 
+      // ======== Sidebar Toggle ========
+      openSidebarBtn.addEventListener('click', () => {
+        sidebar.style.transform = 'translateX(0)';
+      });
+      closeSidebarBtn.addEventListener('click', () => {
+        sidebar.style.transform = '-translateX(100%)';
+      });
+
+      // ======== Chat Management ========
+      function renderChatList() {
+        chatListEl.innerHTML = '';
+        state.chats.forEach((chat, index) => {
+          const div = document.createElement('div');
+          div.className = 'p-2 rounded cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 flex justify-between items-center';
+          div.innerHTML = `<span>${chat.name || 'Chat ' + (index+1)}</span>
+            <div class="space-x-1">
+              <button data-index="${index}" class="renameBtn text-gray-500 dark:text-gray-400 text-sm">✏️</button>
+              <button data-index="${index}" class="deleteBtn text-red-500 text-sm">🗑️</button>
+            </div>`;
+          div.addEventListener('click', (e) => {
+            if(e.target.classList.contains('renameBtn') || e.target.classList.contains('deleteBtn')) return;
+            loadChat(index);
+          });
+          chatListEl.appendChild(div);
+        });
+
+        // Attach delete/rename listeners
+        document.querySelectorAll('.deleteBtn').forEach(btn => {
+          btn.addEventListener('click', e => {
+            e.stopPropagation();
+            const idx = parseInt(btn.dataset.index);
+            state.chats.splice(idx,1);
+            if(state.currentChat >= state.chats.length) state.currentChat = state.chats.length-1;
+            saveChats();
+            renderChatList();
+            loadChat(state.currentChat);
+          });
+        });
+        document.querySelectorAll('.renameBtn').forEach(btn => {
+          btn.addEventListener('click', e => {
+            e.stopPropagation();
+            const idx = parseInt(btn.dataset.index);
+            const name = prompt('New chat name', state.chats[idx].name);
+            if(name) state.chats[idx].name = name;
+            saveChats();
+            renderChatList();
+          });
+        });
+      }
+
+      function saveChats() {
+        localStorage.setItem('titanai_chats', JSON.stringify(state.chats));
+      }
+
+      function newChat() {
+        state.chats.push({name: 'New Chat', messages: []});
+        state.currentChat = state.chats.length -1;
+        saveChats();
+        renderChatList();
+        loadChat(state.currentChat);
+      }
+
+      newChatBtn.addEventListener('click', newChat);
+
+      function loadChat(index) {
+        if(index < 0 || index >= state.chats.length) return;
+        state.currentChat = index;
+        const chat = state.chats[index];
+        chatTitleEl.textContent = chat.name || 'New Chat';
+        renderMessages(chat.messages);
+      }
+
+      function renderMessages(messages) {
+        messagesEl.innerHTML = '';
+        messages.forEach(msg => addMessage(msg.role, msg.content));
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+      }
+
+      function addMessage(role, content) {
+        const div = document.createElement('div');
+        div.className = 'max-w-[80%] p-2 rounded';
+        if(role==='user') {
+          div.className += ' bg-blue-500 text-white self-end';
+        } else {
+          div.className += ' bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 self-start';
+        }
+        div.innerHTML = marked.parse(content);
+        const wrapper = document.createElement('div');
+        wrapper.className = 'flex';
+        wrapper.style.justifyContent = role==='user' ? 'flex-end' : 'flex-start';
+        wrapper.appendChild(div);
+        messagesEl.appendChild(wrapper);
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+      }
+
+      // ======== Send Message ========
+      sendBtn.addEventListener('click', sendMessage);
+      inputEl.addEventListener('keydown', e => { if(e.key==='Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } });
+
+      async function sendMessage() {
+        const content = inputEl.value.trim();
+        if(!content) return;
+        inputEl.value = '';
+        const chat = state.chats[state.currentChat];
+        chat.messages.push({role:'user', content});
+        addMessage('user', content);
+        saveChats();
+
+        // AI response placeholder
+        const aiMessage = {role:'assistant', content:''};
+        chat.messages.push(aiMessage);
+        const msgDiv = document.createElement('div');
+        msgDiv.className = 'max-w-[80%] p-2 rounded bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 self-start';
+        msgDiv.innerHTML = '';
+        const wrapper = document.createElement('div');
+        wrapper.className = 'flex justify-start';
+        wrapper.appendChild(msgDiv);
+        messagesEl.appendChild(wrapper);
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+
+        // Streaming AI response
+        try {
+          const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+            method:'POST',
+            headers:{
+              'Content-Type':'application/json',
+              'Authorization': 'Bearer ' + state.apiKey
+            },
+            body: JSON.stringify({
+              model: state.model,
+              stream: true,
+              messages: [
+                {role:'system', content: state.systemPrompt},
+                ...chat.messages.filter(m=>m.content).map(m=>({role:m.role, content:m.content}))
+              ]
+            })
+          });
+
+          if(!response.body) throw new Error('Streaming not supported');
+
+          const reader = response.body.getReader();
+          const decoder = new TextDecoder();
+          let done = false;
+          while(!done){
+            const {value, done: readerDone} = await reader.read();
+            done = readerDone;
+            if(value){
+              const text = decoder.decode(value);
+              // append character by character (typing animation)
+              aiMessage.content += text;
+              msgDiv.innerHTML = marked.parse(aiMessage.content);
+              messagesEl.scrollTop = messagesEl.scrollHeight;
+            }
+          }
+
+        } catch(err){
+          aiMessage.content = '⚠️ Error: ' + err.message;
+          msgDiv.innerHTML = aiMessage.content;
+        }
+
+        saveChats();
+      }
+
+      // ======== Settings ========
+      settingsBtn.addEventListener('click', ()=> settingsModal.classList.remove('hidden'));
+      closeSettingsBtn.addEventListener('click', ()=> settingsModal.classList.add('hidden'));
+      saveSettingsBtn.addEventListener('click', ()=>{
+        state.apiKey = apiKeyInput.value.trim();
+        state.model = modelInput.value.trim() || 'deepseek/deepseek-r1:free';
+        state.systemPrompt = systemPromptInput.value.trim();
+        localStorage.setItem('titanai_apiKey', state.apiKey);
+        localStorage.setItem('titanai_model', state.model);
+        localStorage.setItem('titanai_systemPrompt', state.systemPrompt);
+        settingsModal.classList.add('hidden');
+      });
+
+      // ======== Initialize App ========
+      init();
+
+    })();
+  </script>
 </body>
 </html>
