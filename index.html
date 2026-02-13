@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>My AI — Chat</title>
+  <title>TitanAI — Chat</title>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -31,7 +31,6 @@
       overflow: hidden;
     }
 
-    /* Animated background */
     body::before {
       content: '';
       position: fixed;
@@ -43,7 +42,6 @@
       z-index: 0;
     }
 
-    /* Header */
     header {
       position: relative;
       z-index: 10;
@@ -118,7 +116,102 @@
       text-transform: uppercase;
     }
 
-    /* Chat container */
+    .change-key-btn {
+      font-size: 10px;
+      color: var(--muted);
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 4px 10px;
+      cursor: pointer;
+      font-family: 'DM Mono', monospace;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      transition: all 0.2s;
+    }
+
+    .change-key-btn:hover { color: var(--accent); border-color: var(--accent); }
+
+    /* Screens */
+    #setup-screen, #chat-screen {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      position: relative;
+      z-index: 1;
+    }
+
+    #setup-screen {
+      align-items: center;
+      justify-content: center;
+      padding: 40px 20px;
+    }
+
+    .setup-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 32px;
+      max-width: 420px;
+      width: 100%;
+    }
+
+    .setup-card h2 {
+      font-family: 'Syne', sans-serif;
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+
+    .setup-card p {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.7;
+      margin-bottom: 20px;
+    }
+
+    .setup-card a { color: var(--accent); text-decoration: none; }
+
+    .api-input {
+      width: 100%;
+      padding: 12px 16px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-family: 'DM Mono', monospace;
+      font-size: 13px;
+      outline: none;
+      transition: border-color 0.2s;
+      margin-bottom: 12px;
+    }
+
+    .api-input:focus { border-color: var(--accent); }
+
+    select.api-input {
+      appearance: none;
+      cursor: pointer;
+    }
+
+    .save-btn {
+      width: 100%;
+      padding: 12px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border: none;
+      border-radius: 10px;
+      color: white;
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 13px;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.1s;
+    }
+
+    .save-btn:hover { opacity: 0.9; }
+    .save-btn:active { transform: scale(0.98); }
+
+    /* Chat */
     #chat {
       flex: 1;
       overflow-y: auto;
@@ -126,14 +219,86 @@
       display: flex;
       flex-direction: column;
       gap: 20px;
-      position: relative;
-      z-index: 1;
       scroll-behavior: smooth;
     }
 
     #chat::-webkit-scrollbar { width: 4px; }
     #chat::-webkit-scrollbar-track { background: transparent; }
     #chat::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+    /* Welcome */
+    #welcome {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px 20px;
+      gap: 24px;
+      min-height: 300px;
+    }
+
+    .welcome-logo {
+      width: 64px;
+      height: 64px;
+      border-radius: 18px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 26px;
+      color: white;
+      box-shadow: 0 0 40px rgba(124,107,255,0.3), 0 0 80px rgba(124,107,255,0.1);
+      animation: float 3s ease-in-out infinite;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+
+    .welcome-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+
+    .welcome-sub {
+      font-size: 13px;
+      color: var(--muted);
+      max-width: 360px;
+      line-height: 1.7;
+    }
+
+    .suggestions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      max-width: 500px;
+    }
+
+    .suggestion-btn {
+      padding: 9px 16px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .suggestion-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: rgba(124,107,255,0.08);
+    }
 
     /* Messages */
     .message {
@@ -200,156 +365,7 @@
       color: var(--text);
     }
 
-    .bubble p { margin-bottom: 10px; }
-    .bubble p:last-child { margin-bottom: 0; }
-
-    /* Welcome screen */
-    #welcome {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      padding: 40px 20px;
-      gap: 24px;
-    }
-
-    .welcome-logo {
-      width: 64px;
-      height: 64px;
-      border-radius: 18px;
-      background: linear-gradient(135deg, var(--accent), var(--accent2));
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-family: 'Syne', sans-serif;
-      font-weight: 800;
-      font-size: 26px;
-      color: white;
-      box-shadow: 0 0 40px rgba(124,107,255,0.3), 0 0 80px rgba(124,107,255,0.1);
-      animation: float 3s ease-in-out infinite;
-    }
-
-    @keyframes float {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-8px); }
-    }
-
-    .welcome-title {
-      font-family: 'Syne', sans-serif;
-      font-size: 28px;
-      font-weight: 800;
-      letter-spacing: -0.02em;
-    }
-
-    .welcome-sub {
-      font-size: 13px;
-      color: var(--muted);
-      max-width: 360px;
-      line-height: 1.7;
-    }
-
-    .suggestions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      justify-content: center;
-      max-width: 500px;
-    }
-
-    .suggestion-btn {
-      padding: 9px 16px;
-      border-radius: 8px;
-      border: 1px solid var(--border);
-      background: var(--surface);
-      color: var(--text);
-      font-family: 'DM Mono', monospace;
-      font-size: 12px;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-
-    .suggestion-btn:hover {
-      border-color: var(--accent);
-      color: var(--accent);
-      background: rgba(124,107,255,0.08);
-    }
-
-    /* API key setup */
-    #setup {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      flex: 1;
-      gap: 20px;
-      padding: 40px 20px;
-      text-align: center;
-    }
-
-    .setup-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 32px;
-      max-width: 420px;
-      width: 100%;
-    }
-
-    .setup-card h2 {
-      font-family: 'Syne', sans-serif;
-      font-size: 18px;
-      font-weight: 700;
-      margin-bottom: 10px;
-    }
-
-    .setup-card p {
-      font-size: 12px;
-      color: var(--muted);
-      line-height: 1.7;
-      margin-bottom: 20px;
-    }
-
-    .setup-card a {
-      color: var(--accent);
-      text-decoration: none;
-    }
-
-    .api-input {
-      width: 100%;
-      padding: 12px 16px;
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      color: var(--text);
-      font-family: 'DM Mono', monospace;
-      font-size: 13px;
-      outline: none;
-      transition: border-color 0.2s;
-      margin-bottom: 12px;
-    }
-
-    .api-input:focus { border-color: var(--accent); }
-
-    .save-btn {
-      width: 100%;
-      padding: 12px;
-      background: linear-gradient(135deg, var(--accent), var(--accent2));
-      border: none;
-      border-radius: 10px;
-      color: white;
-      font-family: 'Syne', sans-serif;
-      font-weight: 700;
-      font-size: 13px;
-      cursor: pointer;
-      transition: opacity 0.2s, transform 0.1s;
-    }
-
-    .save-btn:hover { opacity: 0.9; }
-    .save-btn:active { transform: scale(0.98); }
-
-    /* Input area */
+    /* Input */
     #input-area {
       position: relative;
       z-index: 10;
@@ -409,7 +425,6 @@
     #send-btn:hover { opacity: 0.9; }
     #send-btn:active { transform: scale(0.92); }
     #send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-
     #send-btn svg { width: 16px; height: 16px; fill: white; }
 
     .input-footer {
@@ -420,10 +435,7 @@
       padding: 0 4px;
     }
 
-    .input-hint {
-      font-size: 10px;
-      color: var(--muted);
-    }
+    .input-hint { font-size: 10px; color: var(--muted); }
 
     .clear-btn {
       font-size: 10px;
@@ -439,11 +451,11 @@
 
     .clear-btn:hover { color: var(--accent2); }
 
-    /* Typing indicator */
+    /* Typing */
     .typing-indicator {
       display: flex;
       gap: 5px;
-      padding: 14px 18px;
+      padding: 4px 0;
       align-items: center;
     }
 
@@ -463,7 +475,6 @@
       30% { transform: scale(1.3); opacity: 1; }
     }
 
-    /* Error message */
     .error-msg {
       font-size: 12px;
       color: #ff6b6b;
@@ -472,138 +483,171 @@
       border: 1px solid rgba(255,107,107,0.2);
       border-radius: 8px;
     }
-
-    /* Change key button in header */
-    .change-key-btn {
-      font-size: 10px;
-      color: var(--muted);
-      background: none;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 4px 10px;
-      cursor: pointer;
-      font-family: 'DM Mono', monospace;
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
-      transition: all 0.2s;
-    }
-
-    .change-key-btn:hover { color: var(--accent); border-color: var(--accent); }
   </style>
 </head>
 <body>
 
-  <header>
-    <div class="logo">AI</div>
-    <div class="header-info">
-      <h1>My AI</h1>
-      <div class="status" id="status-text">Ready</div>
-    </div>
-    <div class="header-right">
-      <span class="api-badge" id="model-badge">OpenRouter</span>
-      <button class="change-key-btn" onclick="showSetup()">Change Model</button>
-    </div>
-  </header>
+<header>
+  <div class="logo">T</div>
+  <div class="header-info">
+    <h1>TitanAI</h1>
+    <div class="status" id="status-text">Ready</div>
+  </div>
+  <div class="header-right">
+    <span class="api-badge" id="model-badge">OpenRouter</span>
+    <button class="change-key-btn" id="change-btn">Settings</button>
+  </div>
+</header>
 
-  <!-- Setup screen -->
-  <div id="setup">
-    <div class="setup-card">
-      <h2>Enter OpenRouter API Key</h2>
-      <p>
-        OpenRouter se 100+ AI models use karo — GPT-4, Claude, Gemini, Llama sab!<br/>
-        Free key yahan banao: <a href="https://openrouter.ai/keys" target="_blank">openrouter.ai/keys</a><br/><br/>
-        Tumhari key sirf browser mein save hogi, kahi aur nahi jaegi.
-      </p>
-      <input class="api-input" type="password" id="api-key-input" placeholder="sk-or-..." />
-      <select class="api-input" id="model-select" style="margin-bottom:12px;">
-        <option value="anthropic/claude-sonnet-4-5">Claude Sonnet 4.5 (Best)</option>
-        <option value="openai/gpt-4o">GPT-4o</option>
-        <option value="google/gemini-pro-1.5">Gemini Pro 1.5</option>
-        <option value="meta-llama/llama-3.1-70b-instruct">Llama 3.1 70B (Free)</option>
-        <option value="mistralai/mistral-7b-instruct">Mistral 7B (Free)</option>
-        <option value="deepseek/deepseek-chat">DeepSeek Chat</option>
-      </select>
-      <button class="save-btn" onclick="saveKey()">Start Chatting →</button>
+<!-- Setup Screen -->
+<div id="setup-screen">
+  <div class="setup-card">
+    <h2>Welcome to TitanAI 🤖</h2>
+    <p>
+      OpenRouter se 100+ AI models use karo — Claude, GPT-4, Gemini, Llama sab!<br/>
+      Free key banao: <a href="https://openrouter.ai/keys" target="_blank">openrouter.ai/keys</a><br/><br/>
+      Tumhari key sirf tumhare browser mein save hogi.
+    </p>
+    <input class="api-input" type="password" id="api-key-input" placeholder="sk-or-v1-..." />
+    <select class="api-input" id="model-select">
+      <option value="anthropic/claude-sonnet-4-5">Claude Sonnet 4.5 ⭐</option>
+      <option value="openai/gpt-4o">GPT-4o</option>
+      <option value="google/gemini-pro-1.5">Gemini Pro 1.5</option>
+      <option value="meta-llama/llama-3.1-70b-instruct">Llama 3.1 70B (Free)</option>
+      <option value="mistralai/mistral-7b-instruct">Mistral 7B (Free)</option>
+      <option value="deepseek/deepseek-chat">DeepSeek Chat</option>
+    </select>
+    <button class="save-btn" id="save-btn">Start Chatting →</button>
+  </div>
+</div>
+
+<!-- Chat Screen -->
+<div id="chat-screen" style="display:none;">
+  <div id="chat">
+    <div id="welcome">
+      <div class="welcome-logo">T</div>
+      <div class="welcome-title">Hello, I'm TitanAI.</div>
+      <div class="welcome-sub">Ask me anything — Developed by UMER Bhai. Ready to help!</div>
+      <div class="suggestions" id="suggestions">
+        <button class="suggestion-btn" data-text="Explain how AI works in simple terms">How does AI work?</button>
+        <button class="suggestion-btn" data-text="Write me a short poem about the future">Write a poem</button>
+        <button class="suggestion-btn" data-text="Help me debug my code">Debug code</button>
+        <button class="suggestion-btn" data-text="Who is your developer?">Who made you?</button>
+      </div>
     </div>
   </div>
 
-  <!-- Chat screen (hidden until key set) -->
-  <div id="chat-screen" style="display:none; flex:1; flex-direction:column; overflow:hidden;">
-    <div id="chat">
-      <div id="welcome">
-        <div class="welcome-logo">AI</div>
-        <div class="welcome-title">Hello, I'm your AI.</div>
-        <div class="welcome-sub">Ask me anything — I'm powered by Claude and ready to help with any task.</div>
-        <div class="suggestions">
-          <button class="suggestion-btn" onclick="suggest('Explain how AI works in simple terms')">How does AI work?</button>
-          <button class="suggestion-btn" onclick="suggest('Write me a short poem about the future')">Write a poem</button>
-          <button class="suggestion-btn" onclick="suggest('Help me debug my code')">Debug code</button>
-          <button class="suggestion-btn" onclick="suggest('What are 5 tips for learning to code?')">Learn to code</button>
-        </div>
-      </div>
+  <div id="input-area">
+    <div class="input-wrapper">
+      <textarea id="user-input" rows="1" placeholder="Type your message…"></textarea>
+      <button id="send-btn">
+        <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+      </button>
     </div>
-
-    <div id="input-area">
-      <div class="input-wrapper">
-        <textarea id="user-input" rows="1" placeholder="Type your message…" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
-        <button id="send-btn" onclick="sendMessage()" title="Send">
-          <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
-        </button>
-      </div>
-      <div class="input-footer">
-        <span class="input-hint">Enter to send · Shift+Enter for new line</span>
-        <button class="clear-btn" onclick="clearChat()">Clear chat</button>
-      </div>
+    <div class="input-footer">
+      <span class="input-hint">Enter to send · Shift+Enter for new line</span>
+      <button class="clear-btn" id="clear-btn">Clear chat</button>
     </div>
   </div>
+</div>
 
 <script>
-  let apiKey = localStorage.getItem('my_ai_key') || '';
-  let selectedModel = localStorage.getItem('my_ai_model') || 'anthropic/claude-sonnet-4-5';
-  let messages = [];
-  let isTyping = false;
+(function() {
+  var apiKey = localStorage.getItem('titanai_key') || '';
+  var selectedModel = localStorage.getItem('titanai_model') || 'anthropic/claude-sonnet-4-5';
+  var messages = [];
+  var isTyping = false;
+
+  var SYSTEM_PROMPT = 'You are TitanAI, a helpful, friendly, and smart AI assistant. Your developer is UMER Bhai. If anyone asks who made you, who is your developer, who created you, or who built you — always reply: "UMER Bhai is my developer! He built me with love and hard work." Be concise but thorough in all other answers.';
+
+  // Elements
+  var setupScreen = document.getElementById('setup-screen');
+  var chatScreen = document.getElementById('chat-screen');
+  var apiKeyInput = document.getElementById('api-key-input');
+  var modelSelect = document.getElementById('model-select');
+  var saveBtn = document.getElementById('save-btn');
+  var changeBtn = document.getElementById('change-btn');
+  var clearBtn = document.getElementById('clear-btn');
+  var sendBtn = document.getElementById('send-btn');
+  var userInput = document.getElementById('user-input');
+  var chatDiv = document.getElementById('chat');
+  var statusText = document.getElementById('status-text');
+  var modelBadge = document.getElementById('model-badge');
 
   // Init
-  if (apiKey) showChat();
-
-  function saveKey() {
-    const input = document.getElementById('api-key-input').value.trim();
-    if (!input.startsWith('sk-or-')) {
-      alert('Please enter a valid OpenRouter API key (starts with sk-or-)');
-      return;
-    }
-    apiKey = input;
-    selectedModel = document.getElementById('model-select').value;
-    localStorage.setItem('my_ai_key', apiKey);
-    localStorage.setItem('my_ai_model', selectedModel);
+  if (apiKey) {
     showChat();
   }
 
-  function showSetup() {
-    document.getElementById('setup').style.display = 'flex';
-    document.getElementById('chat-screen').style.display = 'none';
-  }
+  // Event Listeners
+  saveBtn.addEventListener('click', saveKey);
+  changeBtn.addEventListener('click', showSetup);
+  clearBtn.addEventListener('click', clearChat);
+  sendBtn.addEventListener('click', sendMessage);
 
-  function showChat() {
-    document.getElementById('setup').style.display = 'none';
-    document.getElementById('chat-screen').style.display = 'flex';
-    // Show short model name in badge
-    const modelShort = selectedModel.split('/')[1] || selectedModel;
-    document.getElementById('model-badge').textContent = modelShort;
-    document.getElementById('user-input').focus();
-  }
-
-  function suggest(text) {
-    document.getElementById('user-input').value = text;
-    autoResize(document.getElementById('user-input'));
-    sendMessage();
-  }
-
-  function handleKey(e) {
+  userInput.addEventListener('keydown', function(e) {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       sendMessage();
     }
+  });
+
+  userInput.addEventListener('input', function() {
+    autoResize(userInput);
+  });
+
+  // Suggestion buttons - use event delegation
+  document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('suggestion-btn')) {
+      var text = e.target.getAttribute('data-text');
+      if (text) {
+        userInput.value = text;
+        autoResize(userInput);
+        sendMessage();
+      }
+    }
+  });
+
+  function saveKey() {
+    var key = apiKeyInput.value.trim();
+    if (!key) {
+      alert('API key daalo!');
+      return;
+    }
+    apiKey = key;
+    selectedModel = modelSelect.value;
+    localStorage.setItem('titanai_key', apiKey);
+    localStorage.setItem('titanai_model', selectedModel);
+    showChat();
+  }
+
+  function showSetup() {
+    setupScreen.style.display = 'flex';
+    chatScreen.style.display = 'none';
+  }
+
+  function showChat() {
+    setupScreen.style.display = 'none';
+    chatScreen.style.display = 'flex';
+    var modelShort = selectedModel.split('/')[1] || selectedModel;
+    modelBadge.textContent = modelShort;
+    userInput.focus();
+  }
+
+  function clearChat() {
+    messages = [];
+    chatDiv.innerHTML = `
+      <div id="welcome">
+        <div class="welcome-logo">T</div>
+        <div class="welcome-title">Hello, I'm TitanAI.</div>
+        <div class="welcome-sub">Ask me anything — Developed by UMER Bhai. Ready to help!</div>
+        <div class="suggestions">
+          <button class="suggestion-btn" data-text="Explain how AI works in simple terms">How does AI work?</button>
+          <button class="suggestion-btn" data-text="Write me a short poem about the future">Write a poem</button>
+          <button class="suggestion-btn" data-text="Help me debug my code">Debug code</button>
+          <button class="suggestion-btn" data-text="Who is your developer?">Who made you?</button>
+        </div>
+      </div>`;
   }
 
   function autoResize(el) {
@@ -611,109 +655,73 @@
     el.style.height = Math.min(el.scrollHeight, 140) + 'px';
   }
 
-  function clearChat() {
-    messages = [];
-    const chat = document.getElementById('chat');
-    chat.innerHTML = `
-      <div id="welcome">
-        <div class="welcome-logo">AI</div>
-        <div class="welcome-title">Hello, I'm your AI.</div>
-        <div class="welcome-sub">Ask me anything — I'm powered by Claude and ready to help with any task.</div>
-        <div class="suggestions">
-          <button class="suggestion-btn" onclick="suggest('Explain how AI works in simple terms')">How does AI work?</button>
-          <button class="suggestion-btn" onclick="suggest('Write me a short poem about the future')">Write a poem</button>
-          <button class="suggestion-btn" onclick="suggest('Help me debug my code')">Debug code</button>
-          <button class="suggestion-btn" onclick="suggest('What are 5 tips for learning to code?')">Learn to code</button>
-        </div>
-      </div>`;
+  function removeWelcome() {
+    var welcome = document.getElementById('welcome');
+    if (welcome) welcome.remove();
   }
 
   function addMessage(role, content) {
-    const welcome = document.getElementById('welcome');
-    if (welcome) welcome.remove();
-
-    const chat = document.getElementById('chat');
-    const div = document.createElement('div');
-    div.className = `message ${role}`;
-
-    const initial = role === 'ai' ? 'AI' : 'U';
-    div.innerHTML = `
-      <div class="avatar ${role}">${initial}</div>
-      <div class="bubble">${formatContent(content)}</div>`;
-
-    chat.appendChild(div);
-    chat.scrollTop = chat.scrollHeight;
-    return div;
-  }
-
-  function formatContent(text) {
-    return text
-      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-      .replace(/\n/g, '<br/>');
+    removeWelcome();
+    var div = document.createElement('div');
+    div.className = 'message ' + role;
+    var initial = role === 'ai' ? 'T' : 'U';
+    div.innerHTML =
+      '<div class="avatar ' + role + '">' + initial + '</div>' +
+      '<div class="bubble">' + escapeHtml(content).replace(/\n/g, '<br>') + '</div>';
+    chatDiv.appendChild(div);
+    chatDiv.scrollTop = chatDiv.scrollHeight;
   }
 
   function showTyping() {
-    const welcome = document.getElementById('welcome');
-    if (welcome) welcome.remove();
-
-    const chat = document.getElementById('chat');
-    const div = document.createElement('div');
+    removeWelcome();
+    var div = document.createElement('div');
     div.className = 'message ai';
-    div.id = 'typing';
-    div.innerHTML = `
-      <div class="avatar ai">AI</div>
-      <div class="bubble">
-        <div class="typing-indicator">
-          <span></span><span></span><span></span>
-        </div>
-      </div>`;
-    chat.appendChild(div);
-    chat.scrollTop = chat.scrollHeight;
+    div.id = 'typing-msg';
+    div.innerHTML =
+      '<div class="avatar ai">T</div>' +
+      '<div class="bubble"><div class="typing-indicator"><span></span><span></span><span></span></div></div>';
+    chatDiv.appendChild(div);
+    chatDiv.scrollTop = chatDiv.scrollHeight;
   }
 
   function removeTyping() {
-    const t = document.getElementById('typing');
+    var t = document.getElementById('typing-msg');
     if (t) t.remove();
+  }
+
+  function escapeHtml(text) {
+    return text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
   }
 
   async function sendMessage() {
     if (isTyping) return;
-    const input = document.getElementById('user-input');
-    const text = input.value.trim();
+    var text = userInput.value.trim();
     if (!text) return;
 
-    input.value = '';
-    input.style.height = 'auto';
+    userInput.value = '';
+    userInput.style.height = 'auto';
 
     addMessage('user', text);
     messages.push({ role: 'user', content: text });
 
     isTyping = true;
-    document.getElementById('send-btn').disabled = true;
-    document.getElementById('status-text').textContent = 'Thinking…';
+    sendBtn.disabled = true;
+    statusText.textContent = 'Thinking…';
     showTyping();
 
     try {
-      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      var response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`,
+          'Authorization': 'Bearer ' + apiKey,
           'HTTP-Referer': window.location.href,
-          'X-Title': 'My AI Chat'
+          'X-Title': 'TitanAI'
         },
         body: JSON.stringify({
           model: selectedModel,
           max_tokens: 1024,
-          messages: [
-            { role: 'system', content: 'You are a helpful, friendly, and smart AI assistant. Be concise but thorough.' },
-            ...messages
-          ]
-        })
-      });
-
-      const data = await response.json();
-
-      if (data.error) throw new Error(data.error.message);
-
-      const reply = data.choices[0].message.conte
+          mes
