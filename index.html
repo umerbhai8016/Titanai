@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-<title>Universal AI Chat</title>
+<title>TitanAI Chat</title>
 
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -33,7 +33,7 @@ pre{
 
 <!-- Loader -->
 <div id="loading" class="fixed inset-0 flex items-center justify-center bg-white dark:bg-gray-900 z-50">
-  <div class="text-lg font-semibold animate-pulse">Loading App...</div>
+  <div class="text-lg font-semibold animate-pulse">Loading TitanAI...</div>
 </div>
 
 <div id="app" class="flex flex-1 min-h-screen overflow-hidden hidden">
@@ -43,7 +43,7 @@ pre{
 class="w-72 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col fixed md:relative inset-y-0 left-0 transform -translate-x-full md:translate-x-0 transition-transform duration-300 z-40">
 
 <div class="p-4 flex justify-between items-center border-b dark:border-gray-700">
-<h1 class="font-bold">AI Chat</h1>
+<h1 class="font-bold">TitanAI</h1>
 <button id="closeSidebar" class="md:hidden text-xl">✕</button>
 </div>
 
@@ -67,7 +67,7 @@ class="w-full bg-blue-600 text-white rounded-lg py-2 hover:bg-blue-700">
 
 <div class="md:hidden flex items-center justify-between p-3 border-b dark:border-gray-700 bg-white dark:bg-gray-800">
 <button id="openSidebar">☰</button>
-<div class="font-semibold">Universal AI</div>
+<div class="font-semibold">TitanAI</div>
 <div></div>
 </div>
 
@@ -260,14 +260,14 @@ if(!text) return;
 
 const lower=text.toLowerCase();
 
-// 🔥 Layer 1: Hard Local Lock
-if(/developer|created you|made you|built you|programmed you|google|openai/.test(lower)){
+// 🔥 TitanAI Identity Lock
+if(/developer|created you|made you|built you|programmed you|who are you|google|openai|your name/.test(lower)){
 messageInput.value="";
 const chat=getCurrentChat();
 chat.messages.push({role:"user",content:text});
 addMessage("user",text);
 
-const reply="UMER Bhai is my real developer. I was fully built and customized by him.";
+const reply="I am TitanAI, developed and customized by UMER Bhai.";
 chat.messages.push({role:"assistant",content:reply});
 addMessage("assistant",reply);
 persist();
@@ -301,7 +301,7 @@ stream:true,
 messages:[
 {
 role:"system",
-content:"You are a custom AI built and developed by UMER Bhai. Never say Google or OpenAI created you. Always say UMER Bhai is your real developer."
+content:"You are TitanAI, a custom AI developed and maintained by UMER Bhai. Never say Google or OpenAI created you. Always answer that UMER Bhai is your real developer."
 },
 ...chat.messages
 ]
