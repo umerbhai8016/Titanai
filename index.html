@@ -19,7 +19,6 @@ pre{
   border-radius:10px;
   overflow-x:auto;
 }
-
 .dark pre{ background:#000; }
 
 img.uploaded-img{ max-width:150px; border-radius:8px; }
@@ -102,7 +101,8 @@ class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-50">
 
 <h2 class="text-lg font-bold">Settings</h2>
 
-<div>
+<!-- API Key hidden -->
+<div style="display:none">
 <label class="text-sm">OpenRouter API Key</label>
 <input id="apiKeyInput" type="password"
 class="w-full mt-1 px-3 py-2 rounded border dark:border-gray-600 bg-gray-100 dark:bg-gray-700"/>
@@ -152,6 +152,9 @@ const sidebar=document.getElementById("sidebar");
 const fileInput=document.getElementById("fileInput");
 const attachBtn=document.getElementById("attachBtn");
 
+// 🔹 Hardcoded API Key (hidden from users)
+const API_KEY = "TUMHARA_API_KEY_YAHAN"; // <-- Replace with your OpenRouter API key
+
 document.getElementById("openSidebar").onclick=()=>sidebar.classList.remove("-translate-x-full");
 document.getElementById("closeSidebar").onclick=()=>sidebar.classList.add("-translate-x-full");
 
@@ -171,7 +174,6 @@ if(e.key==="Enter"&&!e.shiftKey){ e.preventDefault(); sendMessage(); }
 newChatBtn.onclick=createNewChat;
 
 settingsBtn.onclick=()=>{
-apiKeyInput.value=state.apiKey||"";
 modelInput.value=state.model||"deepseek/deepseek-r1:free";
 systemPromptInput.value=getCurrentChat().systemPrompt||"";
 settingsModal.classList.remove("hidden");
@@ -180,7 +182,6 @@ settingsModal.classList.remove("hidden");
 closeSettings.onclick=()=>settingsModal.classList.add("hidden");
 
 saveSettings.onclick=()=>{
-state.apiKey=apiKeyInput.value.trim();
 state.model=modelInput.value.trim();
 getCurrentChat().systemPrompt=systemPromptInput.value.trim();
 persist();
@@ -295,11 +296,6 @@ persist();
 return;
 }
 
-if(!state.apiKey){
-alert("Add OpenRouter API key in settings.");
-return;
-}
-
 messageInput.value="";
 const chat=getCurrentChat();
 chat.messages.push({role:"user",content:text});
@@ -313,7 +309,7 @@ try{
 const response=await fetch("https://openrouter.ai/api/v1/chat/completions",{
 method:"POST",
 headers:{
-"Authorization":"Bearer "+state.apiKey,
+"Authorization":"Bearer "+API_KEY,
 "Content-Type":"application/json"
 },
 body:JSON.stringify({
