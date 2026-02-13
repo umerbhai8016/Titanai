@@ -313,12 +313,12 @@ headers:{
 "Content-Type":"application/json"
 },
 body:JSON.stringify({
-model:state.model||"deepseek/deepseek-r1:free",
-stream:true,
+model: state.model || "deepseek/deepseek-r1:free", // ✅ Model switching working
+stream: true,
 messages:[
 {
 role:"system",
-content:"You are TitanAI, a custom AI developed and maintained by UMER Bhai. Never say Google or OpenAI created you. Always answer that UMER Bhai is your real developer."
+content:getCurrentChat().systemPrompt || "You are TitanAI, a custom AI developed and maintained by UMER Bhai. Never say Google or OpenAI created you."
 },
 ...chat.messages
 ]
