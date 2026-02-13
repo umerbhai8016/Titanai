@@ -1,268 +1,4 @@
 <!DOCTYPE html>
-<html lang="en" class="h-full">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-<title>TitanAI Chat</title>
-
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-
-<style>
-html, body { height:100%; }
-body { min-height:100vh; }
-
-pre{
-  background:#111827;
-  color:#f3f4f6;
-  padding:12px;
-  border-radius:10px;
-  overflow-x:auto;
-}
-.dark pre{ background:#000; }
-
-img.uploaded-img{ max-width:150px; border-radius:8px; }
-
-@keyframes blink{
-  0%,100%{opacity:1}
-  50%{opacity:0}
-}
-</style>
-</head>
-
-<body class="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 flex flex-col">
-
-<div id="loading" class="fixed inset-0 flex items-center justify-center bg-white dark:bg-gray-900 z-50">
-  <div class="text-lg font-semibold animate-pulse">Loading TitanAI...</div>
-</div>
-
-<div id="app" class="flex flex-1 min-h-screen overflow-hidden hidden">
-
-<!-- Sidebar -->
-<aside id="sidebar"
-class="w-72 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col fixed md:relative inset-y-0 left-0 transform -translate-x-full md:translate-x-0 transition-transform duration-300 z-40">
-
-<div class="p-4 flex justify-between items-center border-b dark:border-gray-700">
-<h1 class="font-bold">TitanAI</h1>
-<button id="closeSidebar" class="md:hidden text-xl">✕</button>
-</div>
-
-<div class="p-3">
-<button id="newChatBtn"
-class="w-full bg-blue-600 text-white rounded-lg py-2 hover:bg-blue-700">
-+ New Chat
-</button>
-</div>
-
-<div id="chatList" class="flex-1 overflow-y-auto px-2 space-y-1"></div>
-
-<div class="p-3 border-t dark:border-gray-700 space-y-2">
-<button id="settingsBtn" class="w-full text-left text-sm">⚙ Settings</button>
-<button id="darkToggle" class="w-full text-left text-sm">🌙 Toggle Dark Mode</button>
-</div>
-</aside>
-
-<!-- Main -->
-<main class="flex-1 flex flex-col min-h-screen">
-
-<div class="md:hidden flex items-center justify-between p-3 border-b dark:border-gray-700 bg-white dark:bg-gray-800">
-<button id="openSidebar">☰</button>
-<div class="font-semibold">TitanAI</div>
-<div></div>
-</div>
-
-<div id="messages" class="flex-1 overflow-y-auto p-4 space-y-4 pb-32"></div>
-
-<div class="fixed bottom-0 left-0 right-0 md:left-72 bg-white dark:bg-gray-800 border-t dark:border-gray-700 p-3">
-<div class="max-w-4xl mx-auto flex gap-2 items-center">
-
-<input type="file" id="fileInput" class="hidden" multiple accept="image/*,video/*,audio/*,.pdf,.txt,.docx,.xlsx"/>
-<button id="attachBtn" class="px-4 py-2 bg-gray-300 dark:bg-gray-700 rounded-lg hover:bg-gray-400">📎</button>
-
-<textarea id="messageInput" rows="1"
-placeholder="Send a message..."
-class="flex-1 resize-none rounded-xl border dark:border-gray-600 px-4 py-2 focus:outline-none focus:ring focus:ring-blue-500 bg-gray-100 dark:bg-gray-700"></textarea>
-<button id="sendBtn"
-class="bg-blue-600 text-white px-5 rounded-xl hover:bg-blue-700">
-Send
-</button>
-</div>
-</div>
-
-</main>
-</div>
-
-<!-- Settings Modal -->
-<div id="settingsModal"
-class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-<div class="bg-white dark:bg-gray-800 w-full max-w-md rounded-xl p-6 space-y-4">
-
-<h2 class="text-lg font-bold">Settings</h2>
-
-<div style="display:none">
-<label class="text-sm">OpenRouter API Key</label>
-<input id="apiKeyInput" type="password"
-class="w-full mt-1 px-3 py-2 rounded border dark:border-gray-600 bg-gray-100 dark:bg-gray-700"/>
-</div>
-
-<div>
-<label class="text-sm">Model</label>
-<input id="modelInput" type="text"
-value="deepseek/deepseek-r1:free"
-class="w-full mt-1 px-3 py-2 rounded border dark:border-gray-600 bg-gray-100 dark:bg-gray-700"/>
-</div>
-
-<div>
-<label class="text-sm">System Prompt</label>
-<textarea id="systemPromptInput"
-class="w-full mt-1 px-3 py-2 rounded border dark:border-gray-600 bg-gray-100 dark:bg-gray-700"></textarea>
-</div>
-
-<div class="flex justify-end gap-2">
-<button id="closeSettings" class="px-4 py-2">Cancel</button>
-<button id="saveSettings"
-class="px-4 py-2 bg-blue-600 text-white rounded">Save</button>
-</div>
-
-</div>
-</div>
-
-<script>
-(function(){
-
-const loading=document.getElementById("loading");
-const app=document.getElementById("app");
-const messagesEl=document.getElementById("messages");
-const messageInput=document.getElementById("messageInput");
-const sendBtn=document.getElementById("sendBtn");
-const newChatBtn=document.getElementById("newChatBtn");
-const chatList=document.getElementById("chatList");
-const settingsBtn=document.getElementById("settingsBtn");
-const settingsModal=document.getElementById("settingsModal");
-const closeSettings=document.getElementById("closeSettings");
-const saveSettings=document.getElementById("saveSettings");
-const apiKeyInput=document.getElementById("apiKeyInput");
-const modelInput=document.getElementById("modelInput");
-const systemPromptInput=document.getElementById("systemPromptInput");
-const darkToggle=document.getElementById("darkToggle");
-const sidebar=document.getElementById("sidebar");
-const fileInput=document.getElementById("fileInput");
-const attachBtn=document.getElementById("attachBtn");
-
-// 🔹 Hardcoded API Key (hidden from users)
-const API_KEY = "TUMHARA_API_KEY_YAHAN"; // <-- Replace with your OpenRouter API key
-
-document.getElementById("openSidebar").onclick=()=>sidebar.classList.remove("-translate-x-full");
-document.getElementById("closeSidebar").onclick=()=>sidebar.classList.add("-translate-x-full");
-
-let state=JSON.parse(localStorage.getItem("ai_state")||"{}");
-if(!state.chats) state.chats=[];
-if(!state.currentChatId) createNewChat();
-
-applyTheme();
-renderChatList();
-loadCurrentChat();
-
-sendBtn.onclick=sendMessage;
-messageInput.addEventListener("keydown",e=>{
-if(e.key==="Enter"&&!e.shiftKey){ e.preventDefault(); sendMessage(); }
-});
-
-newChatBtn.onclick=createNewChat;
-
-settingsBtn.onclick=()=>{
-modelInput.value=state.model||"deepseek/deepseek-r1:free";
-systemPromptInput.value=getCurrentChat().systemPrompt||"";
-settingsModal.classList.remove("hidden");
-};
-
-closeSettings.onclick=()=>settingsModal.classList.add("hidden");
-
-saveSettings.onclick=()=>{
-state.model=modelInput.value.trim();
-getCurrentChat().systemPrompt=systemPromptInput.value.trim();
-persist();
-settingsModal.classList.add("hidden");
-};
-
-darkToggle.onclick=()=>{
-state.dark=!state.dark;
-persist();
-applyTheme();
-};
-
-function applyTheme(){
-if(state.dark) document.documentElement.classList.add("dark");
-else document.documentElement.classList.remove("dark");
-}
-
-function persist(){
-localStorage.setItem("ai_state",JSON.stringify(state));
-}
-
-function createNewChat(){
-const id=Date.now().toString();
-state.currentChatId=id;
-state.chats.unshift({id,title:"New Chat",messages:[],systemPrompt:""});
-persist();
-renderChatList();
-loadCurrentChat();
-}
-
-function getCurrentChat(){
-return state.chats.find(c=>c.id===state.currentChatId);
-}
-
-function renderChatList(){
-chatList.innerHTML="";
-state.chats.forEach(chat=>{
-const div=document.createElement("div");
-div.className="flex justify-between items-center px-3 py-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700 cursor-pointer";
-div.innerHTML=`<span class="truncate flex-1">${chat.title}</span>
-<button class="text-xs text-red-500 ml-2">✕</button>`;
-div.onclick=()=>{
-state.currentChatId=chat.id;
-persist();
-loadCurrentChat();
-};
-div.querySelector("button").onclick=(e)=>{
-e.stopPropagation();
-state.chats=state.chats.filter(c=>c.id!==chat.id);
-if(state.chats.length) state.currentChatId=state.chats[0].id;
-persist();
-renderChatList();
-loadCurrentChat();
-};
-chatList.appendChild(div);
-});
-}
-
-function loadCurrentChat(){
-messagesEl.innerHTML="";
-const chat=getCurrentChat();
-if(!chat) return;
-chat.messages.forEach(m=>addMessage(m.role,m.content));
-}
-
-function addMessage(role,content){
-const div=document.createElement("div");
-div.className=role==="user"?"text-right":"text-left";
-const bubble=document.createElement("div");
-bubble.className=role==="user"
-?"inline-block bg-blue-600 text-white px-4 py-2 rounded-xl"
-:"inline-block bg-gray-200 dark:bg-gray-700 px-4 py-2 rounded-xl";
-bubble.innerHTML=marked.parse(content||"");
-div.appendChild(bubble);
-messagesEl.appendChild(div);
-messagesEl.scrollTop=messagesEl.scrollHeight;
-return bubble;
-}
-
-// 🔹 File / Camera upload handling
-attachBtn.onclick=()=>fileInput.click();
-
-fileInput.addEventListener("change",()=>{
-<!DOCTYPE html>
 <html lang="en" class="bg-gray-50">
 <head>
   <meta charset="UTF-8">
@@ -333,18 +69,7 @@ fileInput.addEventListener("change",()=>{
 
   <!-- Script: MUST be at the end of body -->
   <script>
-    (function() {
-      // ======== App State ========
-      let state = {
-        apiKey: localStorage.getItem('titanai_apiKey') || '',
-        model: localStorage.getItem('titanai_model') || 'deepseek/deepseek-r1:free',
-        darkMode: localStorage.getItem('titanai_darkMode') === 'true',
-        chats: JSON.parse(localStorage.getItem('titanai_chats') || '[]'),
-        currentChat: 0,
-        systemPrompt: localStorage.getItem('titanai_systemPrompt') || ''
-      };
-
-      // ======== Elements ========
+    (function(){
       const loading = document.getElementById('loading');
       const app = document.getElementById('app');
       const messagesEl = document.getElementById('messages');
@@ -365,217 +90,172 @@ fileInput.addEventListener("change",()=>{
       const openSidebarBtn = document.getElementById('openSidebar');
       const closeSidebarBtn = document.getElementById('closeSidebar');
 
-      // ======== Initialize ========
-      function init() {
-        // Hide loader
-        loading.style.display = 'none';
-        app.classList.remove('hidden');
+      // ======== State ========
+      let state = {
+        apiKey: localStorage.getItem('titanai_apiKey') || '',
+        model: localStorage.getItem('titanai_model') || 'deepseek/deepseek-r1:free',
+        darkMode: localStorage.getItem('titanai_darkMode') === 'true',
+        chats: [],
+        currentChat: 0,
+        systemPrompt: localStorage.getItem('titanai_systemPrompt') || ''
+      };
 
-        // Dark mode
-        updateDarkMode();
-
-        // Populate settings
-        apiKeyInput.value = state.apiKey;
-        modelInput.value = state.model;
-        systemPromptInput.value = state.systemPrompt;
-
-        // Load chats
-        if(state.chats.length === 0) newChat();
-        else loadChat(state.currentChat);
-
-        renderChatList();
+      try{
+        state.chats = JSON.parse(localStorage.getItem('titanai_chats')||'[]');
+        if(!Array.isArray(state.chats)) state.chats=[];
+      } catch(e){
+        state.chats=[];
       }
 
-      // ======== Dark Mode ========
-      function updateDarkMode() {
-        if(state.darkMode) document.documentElement.classList.add('dark');
-        else document.documentElement.classList.remove('dark');
-      }
+      // ======== Utility ========
+      function saveChats(){ localStorage.setItem('titanai_chats', JSON.stringify(state.chats)); }
+      function updateDarkMode(){ if(state.darkMode) document.documentElement.classList.add('dark'); else document.documentElement.classList.remove('dark'); }
 
-      darkModeToggle.addEventListener('click', () => {
-        state.darkMode = !state.darkMode;
-        localStorage.setItem('titanai_darkMode', state.darkMode);
-        updateDarkMode();
-      });
-
-      // ======== Sidebar Toggle ========
-      openSidebarBtn.addEventListener('click', () => {
-        sidebar.style.transform = 'translateX(0)';
-      });
-      closeSidebarBtn.addEventListener('click', () => {
-        sidebar.style.transform = '-translateX(100%)';
-      });
-
-      // ======== Chat Management ========
-      function renderChatList() {
-        chatListEl.innerHTML = '';
-        state.chats.forEach((chat, index) => {
-          const div = document.createElement('div');
-          div.className = 'p-2 rounded cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 flex justify-between items-center';
-          div.innerHTML = `<span>${chat.name || 'Chat ' + (index+1)}</span>
+      // ======== Chat Functions ========
+      function renderChatList(){
+        chatListEl.innerHTML='';
+        state.chats.forEach((chat,i)=>{
+          const div=document.createElement('div');
+          div.className='p-2 rounded cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 flex justify-between items-center';
+          div.innerHTML=`<span>${chat.name||'Chat '+(i+1)}</span>
             <div class="space-x-1">
-              <button data-index="${index}" class="renameBtn text-gray-500 dark:text-gray-400 text-sm">✏️</button>
-              <button data-index="${index}" class="deleteBtn text-red-500 text-sm">🗑️</button>
+              <button data-index="${i}" class="renameBtn text-gray-500 dark:text-gray-400 text-sm">✏️</button>
+              <button data-index="${i}" class="deleteBtn text-red-500 text-sm">🗑️</button>
             </div>`;
-          div.addEventListener('click', (e) => {
-            if(e.target.classList.contains('renameBtn') || e.target.classList.contains('deleteBtn')) return;
-            loadChat(index);
-          });
+          div.addEventListener('click',(e)=>{if(!e.target.classList.contains('renameBtn')&&!e.target.classList.contains('deleteBtn')) loadChat(i);});
           chatListEl.appendChild(div);
         });
-
-        // Attach delete/rename listeners
-        document.querySelectorAll('.deleteBtn').forEach(btn => {
-          btn.addEventListener('click', e => {
+        document.querySelectorAll('.deleteBtn').forEach(btn=>{
+          btn.addEventListener('click',e=>{
             e.stopPropagation();
-            const idx = parseInt(btn.dataset.index);
+            const idx=parseInt(btn.dataset.index);
             state.chats.splice(idx,1);
-            if(state.currentChat >= state.chats.length) state.currentChat = state.chats.length-1;
-            saveChats();
-            renderChatList();
-            loadChat(state.currentChat);
+            if(state.currentChat>=state.chats.length) state.currentChat=state.chats.length-1;
+            saveChats(); renderChatList(); loadChat(state.currentChat);
           });
         });
-        document.querySelectorAll('.renameBtn').forEach(btn => {
-          btn.addEventListener('click', e => {
+        document.querySelectorAll('.renameBtn').forEach(btn=>{
+          btn.addEventListener('click',e=>{
             e.stopPropagation();
-            const idx = parseInt(btn.dataset.index);
-            const name = prompt('New chat name', state.chats[idx].name);
-            if(name) state.chats[idx].name = name;
-            saveChats();
-            renderChatList();
+            const idx=parseInt(btn.dataset.index);
+            const name=prompt('New chat name',state.chats[idx].name);
+            if(name) state.chats[idx].name=name;
+            saveChats(); renderChatList();
           });
         });
       }
 
-      function saveChats() {
-        localStorage.setItem('titanai_chats', JSON.stringify(state.chats));
+      function loadChat(index){
+        if(index<0 || index>=state.chats.length) return;
+        state.currentChat=index;
+        const chat=state.chats[index];
+        chatTitleEl.textContent=chat.name||'New Chat';
+        renderMessages(chat.messages||[]);
       }
 
-      function newChat() {
-        state.chats.push({name: 'New Chat', messages: []});
-        state.currentChat = state.chats.length -1;
-        saveChats();
-        renderChatList();
-        loadChat(state.currentChat);
+      function renderMessages(messages){
+        messagesEl.innerHTML='';
+        messages.forEach(msg=>addMessage(msg.role,msg.content));
+        messagesEl.scrollTop=messagesEl.scrollHeight;
       }
 
-      newChatBtn.addEventListener('click', newChat);
-
-      function loadChat(index) {
-        if(index < 0 || index >= state.chats.length) return;
-        state.currentChat = index;
-        const chat = state.chats[index];
-        chatTitleEl.textContent = chat.name || 'New Chat';
-        renderMessages(chat.messages);
-      }
-
-      function renderMessages(messages) {
-        messagesEl.innerHTML = '';
-        messages.forEach(msg => addMessage(msg.role, msg.content));
-        messagesEl.scrollTop = messagesEl.scrollHeight;
-      }
-
-      function addMessage(role, content) {
-        const div = document.createElement('div');
-        div.className = 'max-w-[80%] p-2 rounded';
-        if(role==='user') {
-          div.className += ' bg-blue-500 text-white self-end';
-        } else {
-          div.className += ' bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 self-start';
-        }
-        div.innerHTML = marked.parse(content);
-        const wrapper = document.createElement('div');
-        wrapper.className = 'flex';
-        wrapper.style.justifyContent = role==='user' ? 'flex-end' : 'flex-start';
+      function addMessage(role,content){
+        const div=document.createElement('div');
+        div.className='max-w-[80%] p-2 rounded';
+        if(role==='user') div.className+=' bg-blue-500 text-white self-end';
+        else div.className+=' bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 self-start';
+        div.innerHTML=marked.parse(content);
+        const wrapper=document.createElement('div');
+        wrapper.className='flex';
+        wrapper.style.justifyContent=role==='user'?'flex-end':'flex-start';
         wrapper.appendChild(div);
         messagesEl.appendChild(wrapper);
-        messagesEl.scrollTop = messagesEl.scrollHeight;
+        messagesEl.scrollTop=messagesEl.scrollHeight;
       }
 
-      // ======== Send Message ========
-      sendBtn.addEventListener('click', sendMessage);
-      inputEl.addEventListener('keydown', e => { if(e.key==='Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } });
+      function newChat(){
+        state.chats.push({name:'New Chat',messages:[]});
+        state.currentChat=state.chats.length-1;
+        saveChats(); renderChatList(); loadChat(state.currentChat);
+      }
 
-      async function sendMessage() {
-        const content = inputEl.value.trim();
-        if(!content) return;
-        inputEl.value = '';
-        const chat = state.chats[state.currentChat];
-        chat.messages.push({role:'user', content});
-        addMessage('user', content);
-        saveChats();
+      function sendMessage(){
+        const content=inputEl.value.trim(); if(!content) return; inputEl.value='';
+        const chat=state.chats[state.currentChat];
+        chat.messages.push({role:'user',content}); addMessage('user',content); saveChats();
 
-        // AI response placeholder
-        const aiMessage = {role:'assistant', content:''};
+        const aiMessage={role:'assistant',content:''};
         chat.messages.push(aiMessage);
-        const msgDiv = document.createElement('div');
-        msgDiv.className = 'max-w-[80%] p-2 rounded bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 self-start';
-        msgDiv.innerHTML = '';
-        const wrapper = document.createElement('div');
-        wrapper.className = 'flex justify-start';
+        const msgDiv=document.createElement('div');
+        msgDiv.className='max-w-[80%] p-2 rounded bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 self-start';
+        msgDiv.innerHTML='';
+        const wrapper=document.createElement('div');
+        wrapper.className='flex justify-start';
         wrapper.appendChild(msgDiv);
         messagesEl.appendChild(wrapper);
-        messagesEl.scrollTop = messagesEl.scrollHeight;
+        messagesEl.scrollTop=messagesEl.scrollHeight;
 
-        // Streaming AI response
-        try {
-          const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-            method:'POST',
-            headers:{
-              'Content-Type':'application/json',
-              'Authorization': 'Bearer ' + state.apiKey
-            },
-            body: JSON.stringify({
-              model: state.model,
-              stream: true,
-              messages: [
-                {role:'system', content: state.systemPrompt},
-                ...chat.messages.filter(m=>m.content).map(m=>({role:m.role, content:m.content}))
-              ]
-            })
-          });
+        // Fetch AI streaming
+        if(!state.apiKey) { aiMessage.content='⚠️ Set API Key in Settings'; msgDiv.innerHTML=aiMessage.content; return; }
 
-          if(!response.body) throw new Error('Streaming not supported');
-
-          const reader = response.body.getReader();
-          const decoder = new TextDecoder();
-          let done = false;
-          while(!done){
-            const {value, done: readerDone} = await reader.read();
-            done = readerDone;
-            if(value){
-              const text = decoder.decode(value);
-              // append character by character (typing animation)
-              aiMessage.content += text;
-              msgDiv.innerHTML = marked.parse(aiMessage.content);
-              messagesEl.scrollTop = messagesEl.scrollHeight;
-            }
-          }
-
-        } catch(err){
-          aiMessage.content = '⚠️ Error: ' + err.message;
-          msgDiv.innerHTML = aiMessage.content;
-        }
-
-        saveChats();
+        fetch('https://openrouter.ai/api/v1/chat/completions',{
+          method:'POST',
+          headers:{'Content-Type':'application/json','Authorization':'Bearer '+state.apiKey},
+          body:JSON.stringify({
+            model:state.model,
+            stream:true,
+            messages:[
+              {role:'system',content:state.systemPrompt},
+              ...chat.messages.filter(m=>m.content).map(m=>({role:m.role,content:m.content}))
+            ]
+          })
+        }).then(res=>{
+          if(!res.body) throw new Error('Streaming not supported');
+          const reader=res.body.getReader();
+          const decoder=new TextDecoder();
+          function read(){ reader.read().then(({value,done})=>{
+            if(done){ saveChats(); return; }
+            if(value){ const text=decoder.decode(value); aiMessage.content+=text; msgDiv.innerHTML=marked.parse(aiMessage.content); messagesEl.scrollTop=messagesEl.scrollHeight; }
+            read();
+          }).catch(err=>{ aiMessage.content='⚠️ Error: '+err.message; msgDiv.innerHTML=aiMessage.content; }); }
+          read();
+        }).catch(err=>{ aiMessage.content='⚠️ Error: '+err.message; msgDiv.innerHTML=aiMessage.content; });
       }
 
-      // ======== Settings ========
-      settingsBtn.addEventListener('click', ()=> settingsModal.classList.remove('hidden'));
-      closeSettingsBtn.addEventListener('click', ()=> settingsModal.classList.add('hidden'));
-      saveSettingsBtn.addEventListener('click', ()=>{
-        state.apiKey = apiKeyInput.value.trim();
-        state.model = modelInput.value.trim() || 'deepseek/deepseek-r1:free';
-        state.systemPrompt = systemPromptInput.value.trim();
-        localStorage.setItem('titanai_apiKey', state.apiKey);
-        localStorage.setItem('titanai_model', state.model);
-        localStorage.setItem('titanai_systemPrompt', state.systemPrompt);
+      // ======== Event Listeners ========
+      newChatBtn.addEventListener('click',newChat);
+      sendBtn.addEventListener('click',sendMessage);
+      inputEl.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();}});
+      settingsBtn.addEventListener('click',()=>settingsModal.classList.remove('hidden'));
+      closeSettingsBtn.addEventListener('click',()=>settingsModal.classList.add('hidden'));
+      saveSettingsBtn.addEventListener('click',()=>{
+        state.apiKey=apiKeyInput.value.trim();
+        state.model=modelInput.value.trim()||'deepseek/deepseek-r1:free';
+        state.systemPrompt=systemPromptInput.value.trim();
+        localStorage.setItem('titanai_apiKey',state.apiKey);
+        localStorage.setItem('titanai_model',state.model);
+        localStorage.setItem('titanai_systemPrompt',state.systemPrompt);
         settingsModal.classList.add('hidden');
       });
+      darkModeToggle.addEventListener('click',()=>{ state.darkMode=!state.darkMode; localStorage.setItem('titanai_darkMode',state.darkMode); updateDarkMode(); });
+      openSidebarBtn.addEventListener('click',()=>{ sidebar.style.transform='translateX(0)'; });
+      closeSidebarBtn.addEventListener('click',()=>{ sidebar.style.transform='-translateX(100%)'; });
 
-      // ======== Initialize App ========
-      init();
+      // ======== Safe Init ========
+      function initSafe(){
+        try{
+          updateDarkMode();
+          apiKeyInput.value=state.apiKey; modelInput.value=state.model; systemPromptInput.value=state.systemPrompt;
+          if(state.chats.length===0) newChat(); else loadChat(state.currentChat);
+          renderChatList();
+        } catch(err){ console.error('App init error:',err); }
+        finally{
+          loading.style.display='none';
+          app.classList.remove('hidden');
+        }
+      }
+
+      initSafe();
 
     })();
   </script>
